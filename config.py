@@ -4,4 +4,4 @@ from dotenv import load_dotenv
 load_dotenv()
 
 token = getenv('TOKEN')
-admins = getenv('ADMINS')
+admins = [int(x) for x in (getenv('ADMINS').split(","))]
