@@ -1,12 +1,17 @@
 from aiogram import Router, F
 from aiogram.filters import Command, StateFilter
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from config import admins
 from keyboards import admin_keyboards
+from middleware import jsonParser
 
 admin_router = Router()
+
+class Form(StatesGroup):
+    phraseNumber = State()
+    new_text = State()
 
 @admin_router.message(Command("admin"))
 async def get_admin_panel(message: Message, state: FSMContext):
@@ -15,3 +20,24 @@ async def get_admin_panel(message: Message, state: FSMContext):
         return
     await state.clear()
     await message.answer("Выберите функцию", reply_markup=admin_keyboards.set_admin_keyboard())
+
+@admin_router.message(F.text == "Настроить фразы")
+async def configure_phrases(message: Message, state:FSMContext):
+    await state.set_state(Form.phraseNumber)
+    phrases = jsonParser.load_phrases()
+    await message.answer(text=f"Выберите какую фразу редактировать (1 или 2):\n\n1.{phrases['phrase_1']}\n2.{phrases['phrase_2']}", reply_markup=ReplyKeyboardRemove())
+
+@admin_router.message(Form.phraseNumber, F.text == "1" or "2")
+async def get_phrase(message: Message, state: FSMContext):
+    await state.update_data(phraseNumber = message.text)
+    await state.set_state(Form.new_text)
+    await message.answer(text="Введите новый текст:")
+
+@admin_router.message(Form.new_text, F.text)
+async def update_phrase(message: Message, state: FSMContext):
+    await state.update_data(new_text = message.text)
+    data = await state.get_data()
+    kb = [[InlineKeyboardButton(text="Да", callback_data="yes"), InlineKeyboardButton(text="Нет", callback_data="no")]]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
+    await message.answer(text=f"Ваш измененный текст:\n\n{data['new_text']}", reply_markup=keyboard)
+    await state.clear()
