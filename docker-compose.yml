@@ -10,4 +10,5 @@ services:
       - .env
     volumes:
       - ./db:/app/db
+      - ./static:/app/static
     restart: unless-stopped
