@@ -50,18 +50,16 @@ async def write_in_db(callback: CallbackQuery, state: FSMContext):
     await callback.answer("Данные сохранены")
 #    await db.queries.insert_user(callback.from_user.id, data["get_username"], data["get_greeting"]) // Database is currently disabled
     await callback.message.bot.send_message(chat_id=-4577933909, text=f'Новое поздравление от {data["get_username"]}:\n\n{data["get_greeting"]}')
-    await state.clear()
     kb = [[InlineKeyboardButton(text="Новое поздравление", callback_data="start_over")]]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
     await callback.message.answer("Спасибо! Ваше поздравление отправлено ✅", reply_markup=keyboard)
 
-@start_router.callback_query(F.data == "start_over", StateFilter(None))
+@start_router.callback_query(F.data == "start_over", StateFilter("*"))
 async def register_over(callback: CallbackQuery, state: FSMContext):
-    await state.clear()
     await callback.message.edit_reply_markup(reply_markup=None)
     phrases = await jsonParser.load_phrases()
-    await callback.message.answer(phrases['phrase_1'], reply_markup=None)
-    await state.set_state(Form.get_username)
+    await callback.message.answer(phrases['phrase_2'], reply_markup=None)
+    await state.set_state(Form.get_greeting)
 
 
 @start_router.callback_query(F.data == "no_1")
